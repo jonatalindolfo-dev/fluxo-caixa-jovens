@@ -5,7 +5,9 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwqL_14oW1DmPnl5Z_r3SoitfAKXqeYA0ox1irlQwpLCyOe61iCJ3vL0P0H8kBjJpkUDQ/exec";
 
+// ================================
 // ELEMENTOS
+// ================================
 const elSaldo = document.getElementById("saldo");
 const elEntradas = document.getElementById("entradas");
 const elSaidas = document.getElementById("saidas");
@@ -22,12 +24,19 @@ const btnAdicionar = document.getElementById("btnAdicionar");
 const elMesSelecionado = document.getElementById("mesSelecionado");
 const elAnoSelecionado = document.getElementById("anoSelecionado");
 
+// ================================
+// ESTADO
+// ================================
 let lancamentosCache = [];
 
-// DATA DE HOJE
+// ================================
+// DATA ATUAL
+// ================================
 elData.value = new Date().toISOString().slice(0, 10);
 
+// ================================
 // UTIL
+// ================================
 function formatarMoeda(v) {
   return Number(v || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -48,7 +57,9 @@ function aplicarCorNegativo(el, v) {
   if (Number(v) < 0) el.classList.add("valor-negativo");
 }
 
+// ================================
 // MÊS / ANO
+// ================================
 function inicializarMesEAno() {
   const hoje = new Date();
   elMesSelecionado.value = String(hoje.getMonth() + 1).padStart(2, "0");
@@ -65,7 +76,9 @@ function inicializarMesEAno() {
   }
 }
 
+// ================================
 // API
+// ================================
 async function apiGetLancamentos() {
   const r = await fetch(API_URL);
   return await r.json();
@@ -87,7 +100,21 @@ async function apiAddLancamento(l) {
   if (!txt.includes("OK")) throw new Error("Erro ao salvar");
 }
 
+async function apiDeleteLancamento(id) {
+  const params = new URLSearchParams({
+    action: "delete",
+    id: id,
+  });
+
+  const r = await fetch(`${API_URL}?${params.toString()}`);
+  const txt = await r.text();
+
+  if (!txt.includes("OK")) throw new Error("Erro ao excluir");
+}
+
+// ================================
 // LÓGICA
+// ================================
 async function carregarLancamentos() {
   lancamentosCache = await apiGetLancamentos();
 }
@@ -110,14 +137,14 @@ async function adicionarLancamento() {
   try {
     await apiAddLancamento(novo);
 
-// adiciona localmente sem novo GET
-lancamentosCache.push(novo);
+    // Atualiza localmente (rápido)
+    lancamentosCache.push(novo);
 
-elValor.value = "";
-elDescricao.value = "";
+    elValor.value = "";
+    elDescricao.value = "";
 
-renderizarResumo();
-renderizarLista();;
+    renderizarResumo();
+    renderizarLista();
   } catch {
     alert("Erro ao salvar na planilha");
   } finally {
@@ -126,6 +153,27 @@ renderizarLista();;
   }
 }
 
+async function excluirLancamento(id) {
+  if (!confirm("Deseja excluir este lançamento?")) return;
+
+  try {
+    await apiDeleteLancamento(id);
+
+    // Remove do cache local
+    lancamentosCache = lancamentosCache.filter(
+      l => String(l.id) !== String(id)
+    );
+
+    renderizarResumo();
+    renderizarLista();
+  } catch {
+    alert("Erro ao excluir lançamento");
+  }
+}
+
+// ================================
+// RENDER
+// ================================
 function renderizarResumo() {
   const alvo = periodoSelecionado();
   let saldo = 0, ent = 0, sai = 0, ren = 0;
@@ -174,23 +222,32 @@ function renderizarLista() {
     li.className = "item-lancamento";
 
     li.innerHTML = `
-      <div class="info">
-        <span>${l.data} • ${l.tipo.toUpperCase()} • ${formatarMoeda(l.valor)} • ${l.descricao}</span>
-      </div>
-      <button class="btn-excluir" onclick="excluirLancamento(${JSON.stringify(l.id)})">
-        Excluir
-      </button>
+      <span>${l.data} • ${l.tipo.toUpperCase()} • ${formatarMoeda(l.valor)} • ${l.descricao}</span>
+      <button class="btn-excluir" onclick="excluirLancamento(${l.id})">Excluir</button>
     `;
 
     elLista.appendChild(li);
   });
 }
 
+async function renderizarTudo() {
+  await carregarLancamentos();
+  renderizarResumo();
+  renderizarLista();
+}
+
+// ================================
 // EVENTOS
+// ================================
 btnAdicionar.addEventListener("click", adicionarLancamento);
 elMesSelecionado.addEventListener("change", renderizarTudo);
 elAnoSelecionado.addEventListener("change", renderizarTudo);
 
+// ================================
 // START
+// ================================
 inicializarMesEAno();
 renderizarTudo();
+
+// expõe para o HTML
+window.excluirLancamento = excluirLancamento;
