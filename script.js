@@ -109,9 +109,15 @@ async function adicionarLancamento() {
 
   try {
     await apiAddLancamento(novo);
-    elValor.value = "";
-    elDescricao.value = "";
-    await renderizarTudo();
+
+// adiciona localmente sem novo GET
+lancamentosCache.push(novo);
+
+elValor.value = "";
+elDescricao.value = "";
+
+renderizarResumo();
+renderizarLista();;
   } catch {
     alert("Erro ao salvar na planilha");
   } finally {
@@ -149,30 +155,35 @@ function renderizarResumo() {
 
 function renderizarLista() {
   const alvo = periodoSelecionado();
+
+  const doPeriodo = lancamentosCache
+    .filter(l => l.data.startsWith(alvo))
+    .sort((a, b) => b.data.localeCompare(a.data));
+
   elLista.innerHTML = "";
 
-  const lista = lancamentosCache.filter(l => l.data.startsWith(alvo));
-
-  if (!lista.length) {
-    elLista.innerHTML = "<li>Nenhum lançamento</li>";
+  if (doPeriodo.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "Nenhum lançamento neste período.";
+    elLista.appendChild(li);
     return;
   }
 
-  lista.sort((a, b) => b.data.localeCompare(a.data));
-
-  lista.forEach(l => {
+  doPeriodo.forEach(l => {
     const li = document.createElement("li");
+    li.className = "item-lancamento";
+
     li.innerHTML = `
-      <span>${l.data} • ${l.tipo.toUpperCase()} • ${formatarMoeda(l.valor)} • ${l.descricao}</span>
+      <div class="info">
+        <span>${l.data} • ${l.tipo.toUpperCase()} • ${formatarMoeda(l.valor)} • ${l.descricao}</span>
+      </div>
+      <button class="btn-excluir" onclick="excluirLancamento(${JSON.stringify(l.id)})">
+        Excluir
+      </button>
     `;
+
     elLista.appendChild(li);
   });
-}
-
-async function renderizarTudo() {
-  await carregarLancamentos();
-  renderizarResumo();
-  renderizarLista();
 }
 
 // EVENTOS
