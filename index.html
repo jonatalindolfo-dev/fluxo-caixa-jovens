@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fluxo de Caixa | Jovens + Conectados</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>
+  Fluxo de Caixa
+  <span class="tag-conectados">Jovens + Conectados</span>
+</h1>
+
+<!-- Seleção de período -->
+<section>
+  <h3>Selecionar Período</h3>
+
+  <select id="mesSelecionado">
+    <option value="01">Janeiro</option>
+    <option value="02">Fevereiro</option>
+    <option value="03">Março</option>
+    <option value="04">Abril</option>
+    <option value="05">Maio</option>
+    <option value="06">Junho</option>
+    <option value="07">Julho</option>
+    <option value="08">Agosto</option>
+    <option value="09">Setembro</option>
+    <option value="10">Outubro</option>
+    <option value="11">Novembro</option>
+    <option value="12">Dezembro</option>
+  </select>
+
+  <select id="anoSelecionado"></select>
+
+  <!-- Botões exportação -->
+  <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+    <button id="btnExportarPDF">Exportar PDF</button>
+    <button id="btnExportarCSV">Exportar Excel (CSV)</button>
+  </div>
+</section>
+
+<hr>
+
+<!-- Resumo -->
+<section id="resumo">
+  <p>Saldo Geral: R$ <span id="saldo">0,00</span></p>
+  <p>Entradas do Mês: R$ <span id="entradas">0,00</span></p>
+  <p>Saídas do Mês: R$ <span id="saidas">0,00</span></p>
+  <p>Rendimentos do Mês: R$ <span id="rendimentos">0,00</span></p>
+  <p>
+    Resultado do Mês:
+    <strong>R$ <span id="resultadoMes">0,00</span></strong>
+  </p>
+</section>
+
+<hr>
+
+<!-- Novo lançamento -->
+<section>
+  <h2>Novo Lançamento</h2>
+
+  <select id="tipo">
+    <option value="entrada">Entrada</option>
+    <option value="saida">Saída</option>
+    <option value="rendimento">Rendimento</option>
+  </select>
+
+  <input type="number" id="valor" placeholder="Valor" step="0.01" />
+  <input type="date" id="data" />
+  <input type="text" id="descricao" placeholder="Descrição" />
+
+  <button id="btnAdicionar">Adicionar</button>
+</section>
+
+<hr>
+
+<!-- Lista -->
+<section>
+  <h2>Lançamentos do Período</h2>
+  <ul id="lista"></ul>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
