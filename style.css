@@ -130,11 +130,6 @@ input::placeholder{
   font-weight:800;
 }
 
-/* Alerta negativo */
-.texto-negativo{
-  color:#ff6b6b !important leaves;
-}
-
 /* ===== FORMULÁRIO ===== */
 section:has(#btnAdicionar){
   display:grid;
@@ -250,4 +245,36 @@ section:has(#btnAdicionar) h2{
   #lista li{
     grid-template-columns:1fr;
   }
+}
+
+/* ===== VALOR NEGATIVO ===== */
+.valor-negativo{
+  color:#ff6b6b !important;
+  font-weight:900;
+}
+/* Lista de lançamentos */
+#lista {
+  list-style: none;
+  padding: 0;
+}
+
+.item-lancamento {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-excluir {
+  background: #7a1f1f;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-excluir:hover {
+  background: #a82c2c;
 }
