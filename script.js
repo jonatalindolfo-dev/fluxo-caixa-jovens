@@ -1,101 +1,185 @@
-const CHAVE_STORAGE="fluxoJovemLancamentos";
+// ================================
+// Fluxo de Caixa - Jovens + Conectados
+// Frontend compatível com GitHub Pages
+// ================================
 
-const elSaldo=document.getElementById("saldo");
-const elEntradas=document.getElementById("entradas");
-const elSaidas=document.getElementById("saidas");
-const elRendimentos=document.getElementById("rendimentos");
-const elResultadoMes=document.getElementById("resultadoMes");
-const elLista=document.getElementById("lista");
+const API_URL = "https://script.google.com/macros/s/AKfycbwqL_14oW1DmPnl5Z_r3SoitfAKXqeYA0ox1irlQwpLCyOe61iCJ3vL0P0H8kBjJpkUDQ/exec";
 
-const elTipo=document.getElementById("tipo");
-const elValor=document.getElementById("valor");
-const elData=document.getElementById("data");
-const elDescricao=document.getElementById("descricao");
-const btnAdicionar=document.getElementById("btnAdicionar");
+// ELEMENTOS
+const elSaldo = document.getElementById("saldo");
+const elEntradas = document.getElementById("entradas");
+const elSaidas = document.getElementById("saidas");
+const elRendimentos = document.getElementById("rendimentos");
+const elResultadoMes = document.getElementById("resultadoMes");
+const elLista = document.getElementById("lista");
 
-const elMes=document.getElementById("mesSelecionado");
-const elAno=document.getElementById("anoSelecionado");
+const elTipo = document.getElementById("tipo");
+const elValor = document.getElementById("valor");
+const elData = document.getElementById("data");
+const elDescricao = document.getElementById("descricao");
+const btnAdicionar = document.getElementById("btnAdicionar");
 
-document.getElementById("btnExportarCSV").onclick=exportarCSV;
-document.getElementById("btnExportarPDF").onclick=()=>window.print();
+const elMesSelecionado = document.getElementById("mesSelecionado");
+const elAnoSelecionado = document.getElementById("anoSelecionado");
 
-elData.value=new Date().toISOString().slice(0,10);
+let lancamentosCache = [];
 
-function formatar(v){return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
-function ler(){return JSON.parse(localStorage.getItem(CHAVE_STORAGE)||"[]")}
-function salvar(l){localStorage.setItem(CHAVE_STORAGE,JSON.stringify(l))}
-function periodo(){return `${elAno.value}-${elMes.value}`}
+// DATA DE HOJE
+elData.value = new Date().toISOString().slice(0, 10);
 
-(function(){
-  const h=new Date();
-  elMes.value=String(h.getMonth()+1).padStart(2,"0");
-  for(let a=h.getFullYear()-2;a<=h.getFullYear()+2;a++){
-    const o=document.createElement("option");
-    o.value=a;o.textContent=a;
-    if(a===h.getFullYear())o.selected=true;
-    elAno.appendChild(o);
+// UTIL
+function formatarMoeda(v) {
+  return Number(v || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function periodoSelecionado() {
+  return `${elAnoSelecionado.value}-${elMesSelecionado.value}`;
+}
+
+function setTextoMoeda(el, v) {
+  el.textContent = formatarMoeda(v).replace("R$", "").trim();
+}
+
+function aplicarCorNegativo(el, v) {
+  el.classList.remove("valor-negativo");
+  if (Number(v) < 0) el.classList.add("valor-negativo");
+}
+
+// MÊS / ANO
+function inicializarMesEAno() {
+  const hoje = new Date();
+  elMesSelecionado.value = String(hoje.getMonth() + 1).padStart(2, "0");
+
+  const anoAtual = hoje.getFullYear();
+  elAnoSelecionado.innerHTML = "";
+
+  for (let a = anoAtual - 2; a <= anoAtual + 2; a++) {
+    const o = document.createElement("option");
+    o.value = a;
+    o.textContent = a;
+    if (a === anoAtual) o.selected = true;
+    elAnoSelecionado.appendChild(o);
   }
-})();
+}
 
-btnAdicionar.onclick=()=>{
-  const v=Number(elValor.value);
-  if(v<=0)return alert("Valor inválido");
-  const l=ler();
-  l.push({id:Date.now(),tipo:elTipo.value,valor:v,data:elData.value,descricao:elDescricao.value||"(sem descrição)"});
-  salvar(l);
-  elValor.value="";elDescricao.value="";
-  render();
-};
+// API
+async function apiGetLancamentos() {
+  const r = await fetch(API_URL);
+  return await r.json();
+}
 
-function render(){
-  let saldo=0,ent=0,sai=0,ren=0;
-  const p=periodo();
-  ler().forEach(l=>{
-    saldo+=l.tipo==="saida"?-l.valor:l.valor;
-    if(l.data.startsWith(p)){
-      if(l.tipo==="entrada")ent+=l.valor;
-      if(l.tipo==="saida")sai+=l.valor;
-      if(l.tipo==="rendimento")ren+=l.valor;
+async function apiAddLancamento(l) {
+  const params = new URLSearchParams({
+    action: "add",
+    id: l.id,
+    data: l.data,
+    tipo: l.tipo,
+    valor: l.valor,
+    descricao: l.descricao,
+  });
+
+  const r = await fetch(`${API_URL}?${params.toString()}`);
+  const txt = await r.text();
+
+  if (!txt.includes("OK")) throw new Error("Erro ao salvar");
+}
+
+// LÓGICA
+async function carregarLancamentos() {
+  lancamentosCache = await apiGetLancamentos();
+}
+
+async function adicionarLancamento() {
+  const valor = Number(elValor.value);
+  if (!valor || valor <= 0) return alert("Valor inválido");
+
+  const novo = {
+    id: Date.now(),
+    tipo: elTipo.value,
+    valor,
+    data: elData.value,
+    descricao: elDescricao.value.trim() || "(sem descrição)",
+  };
+
+  btnAdicionar.disabled = true;
+  btnAdicionar.textContent = "SALVANDO...";
+
+  try {
+    await apiAddLancamento(novo);
+    elValor.value = "";
+    elDescricao.value = "";
+    await renderizarTudo();
+  } catch {
+    alert("Erro ao salvar na planilha");
+  } finally {
+    btnAdicionar.disabled = false;
+    btnAdicionar.textContent = "ADICIONAR";
+  }
+}
+
+function renderizarResumo() {
+  const alvo = periodoSelecionado();
+  let saldo = 0, ent = 0, sai = 0, ren = 0;
+
+  lancamentosCache.forEach(l => {
+    if (l.tipo === "entrada" || l.tipo === "rendimento") saldo += l.valor;
+    if (l.tipo === "saida") saldo -= l.valor;
+
+    if (l.data.startsWith(alvo)) {
+      if (l.tipo === "entrada") ent += l.valor;
+      if (l.tipo === "saida") sai += l.valor;
+      if (l.tipo === "rendimento") ren += l.valor;
     }
   });
-  const res=ent+ren-sai;
-  elSaldo.classList.toggle("texto-negativo",saldo<0);
-  elResultadoMes.classList.toggle("texto-negativo",res<0);
 
-  elSaldo.textContent=formatar(saldo).replace("R$","").trim();
-  elEntradas.textContent=formatar(ent).replace("R$","").trim();
-  elSaidas.textContent=formatar(sai).replace("R$","").trim();
-  elRendimentos.textContent=formatar(ren).replace("R$","").trim();
-  elResultadoMes.textContent=formatar(res).replace("R$","").trim();
+  const res = ent + ren - sai;
 
-  elLista.innerHTML="";
-  ler().filter(l=>l.data.startsWith(p)).sort((a,b)=>b.data.localeCompare(a.data))
-    .forEach(l=>{
-      const li=document.createElement("li");
-      li.innerHTML=`${l.data} • ${l.tipo.toUpperCase()} • ${formatar(l.valor)} • ${l.descricao}
-      <button onclick="excluir(${l.id})">Excluir</button>`;
-      elLista.appendChild(li);
-    });
+  setTextoMoeda(elSaldo, saldo);
+  setTextoMoeda(elEntradas, ent);
+  setTextoMoeda(elSaidas, sai);
+  setTextoMoeda(elRendimentos, ren);
+  setTextoMoeda(elResultadoMes, res);
+
+  aplicarCorNegativo(elSaldo, saldo);
+  aplicarCorNegativo(elResultadoMes, res);
 }
 
-function excluir(id){
-  salvar(ler().filter(l=>l.id!==id));
-  render();
+function renderizarLista() {
+  const alvo = periodoSelecionado();
+  elLista.innerHTML = "";
+
+  const lista = lancamentosCache.filter(l => l.data.startsWith(alvo));
+
+  if (!lista.length) {
+    elLista.innerHTML = "<li>Nenhum lançamento</li>";
+    return;
+  }
+
+  lista.sort((a, b) => b.data.localeCompare(a.data));
+
+  lista.forEach(l => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${l.data} • ${l.tipo.toUpperCase()} • ${formatarMoeda(l.valor)} • ${l.descricao}</span>
+    `;
+    elLista.appendChild(li);
+  });
 }
 
-function exportarCSV(){
-  const p=periodo();
-  const dados=ler().filter(l=>l.data.startsWith(p));
-  if(!dados.length)return alert("Nenhum lançamento");
-  let csv="Data;Tipo;Valor;Descrição\n";
-  dados.forEach(l=>csv+=`${l.data};${l.tipo};${l.valor};${l.descricao}\n`);
-  const blob=new Blob([csv],{type:"text/csv"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=`fluxo-caixa-${p}.csv`;
-  a.click();
+async function renderizarTudo() {
+  await carregarLancamentos();
+  renderizarResumo();
+  renderizarLista();
 }
 
-elMes.onchange=render;
-elAno.onchange=render;
-render();
+// EVENTOS
+btnAdicionar.addEventListener("click", adicionarLancamento);
+elMesSelecionado.addEventListener("change", renderizarTudo);
+elAnoSelecionado.addEventListener("change", renderizarTudo);
+
+// START
+inicializarMesEAno();
+renderizarTudo();
