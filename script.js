@@ -1,6 +1,6 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbwqL_14oW1DmPnl5Z_r3SoitfAKXqeYA0ox1irlQwpLCyOe61iCJ3vL0P0H8kBjJpkUDQ/exec";
 
-const SENHA_ACESSO = "Esqueciasenha123*";
+const SENHA_ACESSO = "Atos242*";
 
 let lancamentos = [];
 
@@ -268,3 +268,4 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
   };
 });
+
