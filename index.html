@@ -1,87 +1,172 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Fluxo de Caixa | Jovens + Conectados</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Fluxo de Caixa | Jovens + Conectados</title>
+
+<link rel="stylesheet" href="estilo.css">
+
 </head>
+
 <body>
 
+<!-- LOGIN -->
+
+<div id="loginTela">
+
+<div class="login-box">
+
+<h2>Acesso ao Fluxo<br>Jovens + Conectados</h2>
+
+<div class="campo-senha">
+
+<input
+type="password"
+id="senhaInput"
+placeholder="Digite a senha"
+/>
+
+<span id="toggleSenha">👁</span>
+
+</div>
+
+<button id="btnLogin">
+Entrar
+</button>
+
+<p id="erroSenha">Senha incorreta</p>
+
+</div>
+
+</div>
+
+
+<!-- APP -->
+
+<div id="appConteudo" style="display:none;">
+
 <h1>
-  Fluxo de Caixa
-  <span class="tag-conectados">Jovens + Conectados</span>
+Fluxo de Caixa
+<span class="tag-conectados">JOVENS + CONECTADOS</span>
 </h1>
 
-<!-- Seleção de período -->
+<button class="btn-sair" id="btnLogout">Sair</button>
+
+
 <section>
-  <h3>Selecionar Período</h3>
 
-  <select id="mesSelecionado">
-    <option value="01">Janeiro</option>
-    <option value="02">Fevereiro</option>
-    <option value="03">Março</option>
-    <option value="04">Abril</option>
-    <option value="05">Maio</option>
-    <option value="06">Junho</option>
-    <option value="07">Julho</option>
-    <option value="08">Agosto</option>
-    <option value="09">Setembro</option>
-    <option value="10">Outubro</option>
-    <option value="11">Novembro</option>
-    <option value="12">Dezembro</option>
-  </select>
+<h3>Selecionar Período</h3>
 
-  <select id="anoSelecionado"></select>
+<select id="mesSelecionado">
 
-  <!-- Botões exportação -->
-  <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-    <button id="btnExportarPDF">Exportar PDF</button>
-    <button id="btnExportarCSV">Exportar Excel (CSV)</button>
-  </div>
+<option value="01">Janeiro</option>
+<option value="02">Fevereiro</option>
+<option value="03">Março</option>
+<option value="04">Abril</option>
+<option value="05">Maio</option>
+<option value="06">Junho</option>
+<option value="07">Julho</option>
+<option value="08">Agosto</option>
+<option value="09">Setembro</option>
+<option value="10">Outubro</option>
+<option value="11">Novembro</option>
+<option value="12">Dezembro</option>
+
+</select>
+
+<select id="anoSelecionado"></select>
+
 </section>
+
 
 <hr>
 
-<!-- Resumo -->
+
 <section id="resumo">
-  <p>Saldo Geral: R$ <span id="saldo">0,00</span></p>
-  <p>Entradas do Mês: R$ <span id="entradas">0,00</span></p>
-  <p>Saídas do Mês: R$ <span id="saidas">0,00</span></p>
-  <p>Rendimentos do Mês: R$ <span id="rendimentos">0,00</span></p>
-  <p>
-    Resultado do Mês:
-    <strong>R$ <span id="resultadoMes">0,00</span></strong>
-  </p>
+
+<p>
+Saldo Geral:
+<strong>R$ <span id="saldo">0,00</span></strong>
+</p>
+
+<p>
+Entradas do Mês:
+<strong>R$ <span id="entradas">0,00</span></strong>
+</p>
+
+<p>
+Saídas do Mês:
+<strong>R$ <span id="saidas">0,00</span></strong>
+</p>
+
+<p>
+Rendimentos do Mês:
+<strong>R$ <span id="rendimentos">0,00</span></strong>
+</p>
+
+<p>
+Resultado do Mês:
+<strong>R$ <span id="resultadoMes">0,00</span></strong>
+</p>
+
 </section>
+
 
 <hr>
 
-<!-- Novo lançamento -->
+
 <section>
-  <h2>Novo Lançamento</h2>
 
-  <select id="tipo">
-    <option value="entrada">Entrada</option>
-    <option value="saida">Saída</option>
-    <option value="rendimento">Rendimento</option>
-  </select>
+<h2>Novo Lançamento</h2>
 
-  <input type="number" id="valor" placeholder="Valor" step="0.01" />
-  <input type="date" id="data" />
-  <input type="text" id="descricao" placeholder="Descrição" />
+<select id="tipo">
 
-  <button id="btnAdicionar">Adicionar</button>
+<option value="entrada">Entrada</option>
+<option value="saida">Saída</option>
+<option value="rendimento">Rendimento</option>
+
+</select>
+
+<input
+type="number"
+id="valor"
+placeholder="Valor"
+/>
+
+<input
+type="date"
+id="data"
+/>
+
+<input
+type="text"
+id="descricao"
+placeholder="Descrição"
+/>
+
+<button id="btnAdicionar">
+Adicionar
+</button>
+
 </section>
+
 
 <hr>
 
-<!-- Lista -->
+
 <section>
-  <h2>Lançamentos do Período</h2>
-  <ul id="lista"></ul>
+
+<h2>Lançamentos do Período</h2>
+
+<ul id="lista"></ul>
+
 </section>
+
 
 <script src="script.js"></script>
+
 </body>
 </html>
