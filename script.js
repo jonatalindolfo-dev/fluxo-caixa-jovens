@@ -1,253 +1,270 @@
-// ================================
-// Fluxo de Caixa - Jovens + Conectados
-// Frontend compatível com GitHub Pages
-// ================================
-
 const API_URL = "https://script.google.com/macros/s/AKfycbwqL_14oW1DmPnl5Z_r3SoitfAKXqeYA0ox1irlQwpLCyOe61iCJ3vL0P0H8kBjJpkUDQ/exec";
 
-// ================================
-// ELEMENTOS
-// ================================
-const elSaldo = document.getElementById("saldo");
-const elEntradas = document.getElementById("entradas");
-const elSaidas = document.getElementById("saidas");
-const elRendimentos = document.getElementById("rendimentos");
-const elResultadoMes = document.getElementById("resultadoMes");
-const elLista = document.getElementById("lista");
+const SENHA_ACESSO = "Esqueciasenha123*";
 
-const elTipo = document.getElementById("tipo");
-const elValor = document.getElementById("valor");
-const elData = document.getElementById("data");
-const elDescricao = document.getElementById("descricao");
-const btnAdicionar = document.getElementById("btnAdicionar");
+let lancamentos = [];
 
-const elMesSelecionado = document.getElementById("mesSelecionado");
-const elAnoSelecionado = document.getElementById("anoSelecionado");
+document.addEventListener("DOMContentLoaded", () => {
+  const loginTela = document.getElementById("loginTela");
+  const app = document.getElementById("appConteudo");
+  const senhaInput = document.getElementById("senhaInput");
+  const erroSenha = document.getElementById("erroSenha");
+  const toggleSenha = document.getElementById("toggleSenha");
 
-// ================================
-// ESTADO
-// ================================
-let lancamentosCache = [];
+  const btnLogin = document.getElementById("btnLogin");
+  const btnLogout = document.getElementById("btnLogout");
 
-// ================================
-// DATA ATUAL
-// ================================
-elData.value = new Date().toISOString().slice(0, 10);
+  const elSaldo = document.getElementById("saldo");
+  const elEntradas = document.getElementById("entradas");
+  const elSaidas = document.getElementById("saidas");
+  const elRendimentos = document.getElementById("rendimentos");
+  const elResultadoMes = document.getElementById("resultadoMes");
 
-// ================================
-// UTIL
-// ================================
-function formatarMoeda(v) {
-  return Number(v || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
+  const elLista = document.getElementById("lista");
 
-function periodoSelecionado() {
-  return `${elAnoSelecionado.value}-${elMesSelecionado.value}`;
-}
+  const elTipo = document.getElementById("tipo");
+  const elValor = document.getElementById("valor");
+  const elData = document.getElementById("data");
+  const elDescricao = document.getElementById("descricao");
 
-function setTextoMoeda(el, v) {
-  el.textContent = formatarMoeda(v).replace("R$", "").trim();
-}
+  const btnAdicionar = document.getElementById("btnAdicionar");
 
-function aplicarCorNegativo(el, v) {
-  el.classList.remove("valor-negativo");
-  if (Number(v) < 0) el.classList.add("valor-negativo");
-}
+  const elMesSelecionado = document.getElementById("mesSelecionado");
+  const elAnoSelecionado = document.getElementById("anoSelecionado");
 
-// ================================
-// MÊS / ANO
-// ================================
-function inicializarMesEAno() {
-  const hoje = new Date();
-  elMesSelecionado.value = String(hoje.getMonth() + 1).padStart(2, "0");
+  elData.value = new Date().toISOString().slice(0, 10);
 
-  const anoAtual = hoje.getFullYear();
-  elAnoSelecionado.innerHTML = "";
-
-  for (let a = anoAtual - 2; a <= anoAtual + 2; a++) {
-    const o = document.createElement("option");
-    o.value = a;
-    o.textContent = a;
-    if (a === anoAtual) o.selected = true;
-    elAnoSelecionado.appendChild(o);
+  // ================================
+  // UTIL
+  // ================================
+  function formatar(v) {
+    return Number(v || 0)
+      .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      .replace("R$", "")
+      .trim();
   }
-}
 
-// ================================
-// API
-// ================================
-async function apiGetLancamentos() {
-  const r = await fetch(API_URL);
-  return await r.json();
-}
+  function periodo() {
+    return `${elAnoSelecionado.value}-${elMesSelecionado.value}`;
+  }
 
-async function apiAddLancamento(l) {
-  const params = new URLSearchParams({
-    action: "add",
-    id: l.id,
-    data: l.data,
-    tipo: l.tipo,
-    valor: l.valor,
-    descricao: l.descricao,
-  });
+  function formatarData(data) {
+    if (!data) return "";
+    const d = new Date(data);
+    if (Number.isNaN(d.getTime())) return data;
+    return d.toLocaleDateString("pt-BR");
+  }
 
-  const r = await fetch(`${API_URL}?${params.toString()}`);
-  const txt = await r.text();
+  function liberarAcesso() {
+    loginTela.style.display = "none";
+    app.style.display = "block";
 
-  if (!txt.includes("OK")) throw new Error("Erro ao salvar");
-}
+    setTimeout(() => {
+      app.classList.add("ativo");
+    }, 50);
+  }
 
-async function apiDeleteLancamento(id) {
-  const params = new URLSearchParams({
-    action: "delete",
-    id: id,
-  });
-
-  const r = await fetch(`${API_URL}?${params.toString()}`);
-  const txt = await r.text();
-
-  if (!txt.includes("OK")) throw new Error("Erro ao excluir");
-}
-
-// ================================
-// LÓGICA
-// ================================
-async function carregarLancamentos() {
-  lancamentosCache = await apiGetLancamentos();
-}
-
-async function adicionarLancamento() {
-  const valor = Number(elValor.value);
-  if (!valor || valor <= 0) return alert("Valor inválido");
-
-  const novo = {
-    id: Date.now(),
-    tipo: elTipo.value,
-    valor,
-    data: elData.value,
-    descricao: elDescricao.value.trim() || "(sem descrição)",
+  // ================================
+  // LOGIN
+  // ================================
+  btnLogin.onclick = () => {
+    if (senhaInput.value === SENHA_ACESSO) {
+      localStorage.setItem("acesso_fluxo", "ok");
+      liberarAcesso();
+      init();
+    } else {
+      erroSenha.style.display = "block";
+    }
   };
 
-  btnAdicionar.disabled = true;
-  btnAdicionar.textContent = "SALVANDO...";
-
-  try {
-    await apiAddLancamento(novo);
-
-    // Atualiza localmente (rápido)
-    lancamentosCache.push(novo);
-
-    elValor.value = "";
-    elDescricao.value = "";
-
-    renderizarResumo();
-    renderizarLista();
-  } catch {
-    alert("Erro ao salvar na planilha");
-  } finally {
-    btnAdicionar.disabled = false;
-    btnAdicionar.textContent = "ADICIONAR";
-  }
-}
-
-async function excluirLancamento(id) {
-  if (!confirm("Deseja excluir este lançamento?")) return;
-
-  try {
-    await apiDeleteLancamento(id);
-
-    // Remove do cache local
-    lancamentosCache = lancamentosCache.filter(
-      l => String(l.id) !== String(id)
-    );
-
-    renderizarResumo();
-    renderizarLista();
-  } catch {
-    alert("Erro ao excluir lançamento");
-  }
-}
-
-// ================================
-// RENDER
-// ================================
-function renderizarResumo() {
-  const alvo = periodoSelecionado();
-  let saldo = 0, ent = 0, sai = 0, ren = 0;
-
-  lancamentosCache.forEach(l => {
-    if (l.tipo === "entrada" || l.tipo === "rendimento") saldo += l.valor;
-    if (l.tipo === "saida") saldo -= l.valor;
-
-    if (l.data.startsWith(alvo)) {
-      if (l.tipo === "entrada") ent += l.valor;
-      if (l.tipo === "saida") sai += l.valor;
-      if (l.tipo === "rendimento") ren += l.valor;
+  senhaInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      btnLogin.click();
     }
   });
 
-  const res = ent + ren - sai;
+  senhaInput.addEventListener("input", () => {
+    erroSenha.style.display = "none";
+  });
 
-  setTextoMoeda(elSaldo, saldo);
-  setTextoMoeda(elEntradas, ent);
-  setTextoMoeda(elSaidas, sai);
-  setTextoMoeda(elRendimentos, ren);
-  setTextoMoeda(elResultadoMes, res);
-
-  aplicarCorNegativo(elSaldo, saldo);
-  aplicarCorNegativo(elResultadoMes, res);
-}
-
-function renderizarLista() {
-  const alvo = periodoSelecionado();
-
-  const doPeriodo = lancamentosCache
-    .filter(l => l.data.startsWith(alvo))
-    .sort((a, b) => b.data.localeCompare(a.data));
-
-  elLista.innerHTML = "";
-
-  if (doPeriodo.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "Nenhum lançamento neste período.";
-    elLista.appendChild(li);
-    return;
+  if (toggleSenha) {
+    toggleSenha.onclick = () => {
+      if (senhaInput.type === "password") {
+        senhaInput.type = "text";
+        toggleSenha.textContent = "🙈";
+      } else {
+        senhaInput.type = "password";
+        toggleSenha.textContent = "👁";
+      }
+    };
   }
 
-  doPeriodo.forEach(l => {
-    const li = document.createElement("li");
-    li.className = "item-lancamento";
+  btnLogout.onclick = () => {
+    localStorage.removeItem("acesso_fluxo");
+    location.reload();
+  };
 
-    li.innerHTML = `
-      <span>${l.data} • ${l.tipo.toUpperCase()} • ${formatarMoeda(l.valor)} • ${l.descricao}</span>
-      <button class="btn-excluir" onclick="excluirLancamento(${l.id})">Excluir</button>
-    `;
+  if (localStorage.getItem("acesso_fluxo") === "ok") {
+    liberarAcesso();
+    init();
+  }
 
-    elLista.appendChild(li);
+  // ================================
+  // FORMATAÇÃO DO VALOR EM R$
+  // ================================
+  elValor.addEventListener("input", () => {
+    let v = elValor.value.replace(/\D/g, "");
+
+    if (!v) {
+      elValor.value = "";
+      return;
+    }
+
+    v = (Number(v) / 100).toFixed(2) + "";
+    v = v.replace(".", ",");
+    v = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    elValor.value = v;
   });
-}
 
-async function renderizarTudo() {
-  await carregarLancamentos();
-  renderizarResumo();
-  renderizarLista();
-}
+  // ================================
+  // API
+  // ================================
+  async function carregar() {
+    const r = await fetch(API_URL);
+    lancamentos = await r.json();
+  }
 
-// ================================
-// EVENTOS
-// ================================
-btnAdicionar.addEventListener("click", adicionarLancamento);
-elMesSelecionado.addEventListener("change", renderizarTudo);
-elAnoSelecionado.addEventListener("change", renderizarTudo);
+  async function salvar(l) {
+    const p = new URLSearchParams({ action: "add", ...l });
+    await fetch(`${API_URL}?${p.toString()}`);
+  }
 
-// ================================
-// START
-// ================================
-inicializarMesEAno();
-renderizarTudo();
+  async function excluir(id) {
+    const p = new URLSearchParams({ action: "delete", id });
+    await fetch(`${API_URL}?${p.toString()}`);
+  }
 
-// expõe para o HTML
-window.excluirLancamento = excluirLancamento;
+  // ================================
+  // RENDER
+  // ================================
+  function render() {
+    let saldo = 0,
+      ent = 0,
+      sai = 0,
+      ren = 0;
+
+    const alvo = periodo();
+
+    elLista.innerHTML = "";
+
+    lancamentos.forEach((l) => {
+      const valorNumerico = Number(l.valor) || 0;
+
+      if (l.tipo === "saida") saldo -= valorNumerico;
+      else saldo += valorNumerico;
+
+      if (String(l.data).startsWith(alvo)) {
+        if (l.tipo === "entrada") ent += valorNumerico;
+        if (l.tipo === "saida") sai += valorNumerico;
+        if (l.tipo === "rendimento") ren += valorNumerico;
+
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+          <span>${formatarData(l.data)} • ${String(l.tipo).toUpperCase()} • ${formatar(valorNumerico)} • ${l.descricao}</span>
+          <button class="btn-excluir" data-id="${l.id}">Excluir</button>
+        `;
+
+        elLista.appendChild(li);
+      }
+    });
+
+    elSaldo.textContent = formatar(saldo);
+    elEntradas.textContent = formatar(ent);
+    elSaidas.textContent = formatar(sai);
+    elRendimentos.textContent = formatar(ren);
+    elResultadoMes.textContent = formatar(ent + ren - sai);
+  }
+
+  // ================================
+  // AÇÕES
+  // ================================
+  btnAdicionar.onclick = async () => {
+    const valorConvertido = Number(
+      elValor.value.replace(/\./g, "").replace(",", ".")
+    );
+
+    const l = {
+      id: Date.now(),
+      tipo: elTipo.value,
+      valor: valorConvertido,
+      data: elData.value,
+      descricao: elDescricao.value || "(sem descrição)",
+    };
+
+    if (!l.valor || l.valor <= 0) {
+      alert("Digite um valor válido.");
+      return;
+    }
+
+    if (!l.data) {
+      alert("Selecione uma data.");
+      return;
+    }
+
+    btnAdicionar.disabled = true;
+    btnAdicionar.textContent = "Salvando...";
+
+    try {
+      await salvar(l);
+      lancamentos.push(l);
+
+      elValor.value = "";
+      elDescricao.value = "";
+
+      render();
+    } finally {
+      btnAdicionar.disabled = false;
+      btnAdicionar.textContent = "Adicionar";
+    }
+  };
+
+  elLista.onclick = async (e) => {
+    if (e.target.classList.contains("btn-excluir")) {
+      const id = e.target.dataset.id;
+
+      if (confirm("Excluir lançamento?")) {
+        await excluir(id);
+
+        lancamentos = lancamentos.filter((l) => String(l.id) !== String(id));
+
+        render();
+      }
+    }
+  };
+
+  // ================================
+  // INIT
+  // ================================
+  async function init() {
+    const d = new Date();
+
+    elMesSelecionado.value = String(d.getMonth() + 1).padStart(2, "0");
+
+    elAnoSelecionado.innerHTML = `<option>${d.getFullYear()}</option>`;
+
+    await carregar();
+    render();
+  }
+
+  elMesSelecionado.onchange = async () => {
+    await carregar();
+    render();
+  };
+
+  elAnoSelecionado.onchange = async () => {
+    await carregar();
+    render();
+  };
+});
